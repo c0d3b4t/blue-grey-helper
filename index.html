@@ -1,0 +1,2204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blue & Grey Helper</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💜</text></svg>">
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // TODO: Replace with your Supabase credentials
+        // Get these from: Supabase Dashboard > Project Settings > API
+        const SUPABASE_URL = 'https://lezcsulgjvedwzjqewwe.supabase.co'; // e.g., 'https://abcdefghijklmnop.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxlemNzdWxnanZlZHd6anFld3dlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwMjcwMTAsImV4cCI6MjA4MjYwMzAxMH0.OiViuTi0yyc5-81eLY9MMy31kiLQicqkXyRbmTRg9Us'; // The 'anon' / 'public' key
+
+        // Initialize Supabase client
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabaseClient = supabaseClient;
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #121213;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #3a3a3c;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #818384;
+            font-size: 0.9rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .game-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .grid-container {
+            margin-bottom: 30px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-rows: repeat(6, 1fr);
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+        }
+
+        .tile {
+            width: 62px;
+            height: 62px;
+            border: 2px solid #3a3a3c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .tile:hover {
+            border-color: #565758;
+        }
+
+        .tile.filled {
+            border-color: #565758;
+        }
+
+        .tile.correct {
+            background-color: #5b7ec4;
+            border-color: #5b7ec4;
+            color: #ffffff;
+        }
+
+        .tile.present {
+            background-color: #808080;
+            border-color: #808080;
+            color: #ffffff;
+        }
+
+        .tile.absent {
+            background-color: #000000;
+            border-color: #000000;
+            color: #ffffff;
+        }
+
+        .keyboard {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .keyboard-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+
+        .key {
+            background-color: #818384;
+            border: none;
+            border-radius: 4px;
+            color: #ffffff;
+            font-size: 0.85rem;
+            font-weight: bold;
+            padding: 15px;
+            min-width: 43px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.1s ease;
+            user-select: none;
+        }
+
+        .key:hover {
+            background-color: #9a9a9c;
+        }
+
+        .key.wide {
+            min-width: 65px;
+            font-size: 0.75rem;
+        }
+
+        .key.correct {
+            background-color: #5b7ec4;
+        }
+
+        .key.present {
+            background-color: #808080;
+        }
+
+        .key.absent {
+            background-color: #000000;
+        }
+
+        .recommendations {
+            background-color: #1a1a1b;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #3a3a3c;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .recommendations h2 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: #ffffff;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+        }
+
+        .stat-box {
+            background-color: #2a2a2b;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #818384;
+            font-size: 0.75rem;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .word-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .word-item {
+            background-color: #2a2a2b;
+            border-radius: 6px;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .word-item:hover {
+            background-color: #333334;
+            border-color: #565758;
+        }
+
+        .word-item.selected {
+            border-color: #538d4e;
+        }
+
+        .word-text {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 5px;
+        }
+
+        .word-reason {
+            font-size: 0.8rem;
+            color: #818384;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background-color: #818384;
+            border: none;
+            border-radius: 4px;
+            color: #ffffff;
+            font-size: 0.9rem;
+            font-weight: bold;
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background-color: #9a9a9c;
+        }
+
+        .btn.primary {
+            background-color: #538d4e;
+        }
+
+        .btn.primary:hover {
+            background-color: #6aaa64;
+        }
+
+        .instructions {
+            background-color: #1a1a1b;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #3a3a3c;
+            font-size: 0.85rem;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .instructions ul {
+            margin-left: 20px;
+            color: #818384;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .legend-box.correct {
+            background-color: #5b7ec4;
+            color: #ffffff;
+        }
+
+        .legend-box.present {
+            background-color: #808080;
+            color: #ffffff;
+        }
+
+        .legend-box.absent {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        .loading {
+            text-align: center;
+            color: #818384;
+            font-style: italic;
+        }
+
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .recommendations {
+                max-height: 400px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .tile {
+                width: 52px;
+                height: 52px;
+                font-size: 1.5rem;
+            }
+
+            .key {
+                padding: 12px 8px;
+                min-width: 35px;
+                font-size: 0.75rem;
+            }
+
+            .key.wide {
+                min-width: 55px;
+                font-size: 0.65rem;
+            }
+        }
+
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: #1a1a1b;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #3a3a3c;
+            border-radius: 4px;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+            background: #565758;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: #1a1a1b;
+            border-radius: 8px;
+            padding: 0;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid #3a3a3c;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #3a3a3c;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #818384;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #ffffff;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-body h3 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #ffffff;
+        }
+
+        .add-word-section, .custom-words-section, .total-words-section {
+            margin-bottom: 30px;
+        }
+
+        #customWordInput {
+            background-color: #2a2a2b;
+            border: 2px solid #3a3a3c;
+            border-radius: 4px;
+            color: #ffffff;
+            padding: 12px;
+            font-size: 1rem;
+            width: 200px;
+            margin-right: 10px;
+            text-transform: uppercase;
+        }
+
+        #customWordInput:focus {
+            outline: none;
+            border-color: #538d4e;
+        }
+
+        .hint {
+            color: #818384;
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+
+        .custom-words-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background-color: #2a2a2b;
+            border-radius: 4px;
+        }
+
+        .custom-word-tag {
+            background-color: #538d4e;
+            color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .remove-word {
+            background: none;
+            border: none;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-word:hover {
+            color: #ff6b6b;
+        }
+
+        .admin-modal {
+            max-width: 900px;
+            max-height: 90vh;
+        }
+
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .admin-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3a3a3c;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #818384;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: #ffffff;
+        }
+
+        .tab-btn.active {
+            color: #ffffff;
+            border-bottom-color: #538d4e;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .search-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .search-input, .sort-select, .filter-select {
+            background-color: #2a2a2b;
+            border: 2px solid #3a3a3c;
+            border-radius: 4px;
+            color: #ffffff;
+            padding: 10px;
+            font-size: 0.9rem;
+        }
+
+        .search-input {
+            flex: 1;
+        }
+
+        .search-input:focus, .sort-select:focus, .filter-select:focus {
+            outline: none;
+            border-color: #538d4e;
+        }
+
+        .word-grid, .trash-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #2a2a2b;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .word-item-admin {
+            background-color: #1a1a1b;
+            border: 2px solid #3a3a3c;
+            border-radius: 4px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .word-item-admin:hover {
+            border-color: #565758;
+        }
+
+        .word-item-admin.selected {
+            border-color: #538d4e;
+            background-color: #2a3a2b;
+        }
+
+        .word-item-admin.bts-word::before {
+            content: '💜';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.7rem;
+        }
+
+        .word-text-admin {
+            text-transform: uppercase;
+            font-weight: bold;
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+
+        .word-actions {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            margin-top: 5px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: #818384;
+            cursor: pointer;
+            padding: 4px;
+            font-size: 1rem;
+        }
+
+        .icon-btn:hover {
+            color: #ffffff;
+        }
+
+        .icon-btn.delete:hover {
+            color: #ff6b6b;
+        }
+
+        .bulk-actions, .trash-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .bulk-add-section {
+            margin-top: 30px;
+        }
+
+        .bulk-add-section h3, .add-word-section h3 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        #singleWordInput {
+            background-color: #2a2a2b;
+            border: 2px solid #3a3a3c;
+            border-radius: 4px;
+            color: #ffffff;
+            padding: 12px;
+            font-size: 1rem;
+            width: 200px;
+            margin-right: 10px;
+            text-transform: uppercase;
+        }
+
+        #singleWordInput:focus {
+            outline: none;
+            border-color: #538d4e;
+        }
+
+        #bulkWordInput {
+            width: 100%;
+            background-color: #2a2a2b;
+            border: 2px solid #3a3a3c;
+            border-radius: 4px;
+            color: #ffffff;
+            padding: 12px;
+            font-size: 0.95rem;
+            font-family: monospace;
+            resize: vertical;
+            margin-bottom: 10px;
+        }
+
+        #bulkWordInput:focus {
+            outline: none;
+            border-color: #538d4e;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ffffff;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .trash-item {
+            background-color: #3a2a2a;
+            border: 2px solid #5a3a3a;
+        }
+
+        .trash-item:hover {
+            border-color: #7a4a4a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💜 Blue & Grey Helper</h1>
+            <p class="subtitle">Find optimal guesses for BTS & ARMY themed puzzles</p>
+        </header>
+
+        <div class="instructions">
+            <h3>How to Use:</h3>
+            <ul>
+                <li><strong>Type</strong> letters on your keyboard or click the on-screen keyboard</li>
+                <li><strong>Click tiles</strong> to cycle through states: Unknown → Absent (Black) → Present (Grey) → Correct (Blue)</li>
+                <li><strong>Click keyboard letters</strong> to mark their states globally</li>
+                <li><strong>Use recommendations</strong> to find words that eliminate the most letters</li>
+            </ul>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-box correct">A</div>
+                <span>Correct Position (Blue)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box present">B</div>
+                <span>Wrong Position (Grey)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box absent">C</div>
+                <span>Not in Word (Black)</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn primary" id="resetBtn">Reset Puzzle</button>
+            <button class="btn" id="clearRowBtn">Clear Current Row</button>
+        </div>
+
+        <div class="modal" id="adminModal" style="display: none;">
+            <div class="modal-content admin-modal">
+                <div class="modal-header">
+                    <h2>Admin: Manage Word Dictionary</h2>
+                    <button class="close-btn" id="closeAdminModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="admin-stats">
+                        <div class="stat-box">
+                            <div class="stat-label">Total Words</div>
+                            <div class="stat-value" id="adminTotalWords">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">BTS Words</div>
+                            <div class="stat-value" id="adminBTSWords">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Common Words</div>
+                            <div class="stat-value" id="adminCommonWords">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Trash Bin</div>
+                            <div class="stat-value" id="adminTrashCount">0</div>
+                        </div>
+                    </div>
+
+                    <div class="admin-tabs">
+                        <button class="tab-btn active" data-tab="dictionary">Dictionary</button>
+                        <button class="tab-btn" data-tab="add">Add Words</button>
+                        <button class="tab-btn" data-tab="trash">Trash Bin</button>
+                    </div>
+
+                    <div class="tab-content active" id="dictionaryTab">
+                        <div class="search-controls">
+                            <input type="text" id="searchWords" placeholder="Search words..." class="search-input">
+                            <select id="sortWords" class="sort-select">
+                                <option value="alpha-asc">A-Z</option>
+                                <option value="alpha-desc">Z-A</option>
+                                <option value="length">By Length</option>
+                            </select>
+                            <select id="filterWords" class="filter-select">
+                                <option value="all">All Words</option>
+                                <option value="bts">BTS Words Only</option>
+                                <option value="common">Common Words Only</option>
+                            </select>
+                        </div>
+                        <div class="word-grid" id="wordGrid"></div>
+                        <div class="bulk-actions">
+                            <button class="btn" id="selectAllBtn">Select All</button>
+                            <button class="btn" id="deselectAllBtn">Deselect All</button>
+                            <button class="btn" id="bulkDeleteBtn">Delete Selected</button>
+                            <button class="btn" id="exportDictBtn">Export Dictionary</button>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="addTab">
+                        <div class="add-word-section">
+                            <h3>Add Single Word</h3>
+                            <input type="text" id="singleWordInput" placeholder="Enter 5-letter word" maxlength="5">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="isBTSWord">
+                                <span>Mark as BTS/ARMY word</span>
+                            </label>
+                            <button class="btn primary" id="addSingleWordBtn">Add Word</button>
+                        </div>
+                        <div class="bulk-add-section">
+                            <h3>Bulk Add Words</h3>
+                            <textarea id="bulkWordInput" placeholder="Enter multiple words (one per line or comma-separated)" rows="10"></textarea>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="bulkIsBTSWord">
+                                <span>Mark all as BTS/ARMY words</span>
+                            </label>
+                            <button class="btn primary" id="bulkAddBtn">Add All Words</button>
+                            <p class="hint">Enter words separated by commas or new lines. Invalid words will be skipped.</p>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="trashTab">
+                        <div class="trash-controls">
+                            <button class="btn primary" id="restoreAllBtn">Restore All</button>
+                            <button class="btn" id="emptyTrashBtn">Empty Trash</button>
+                        </div>
+                        <div class="trash-grid" id="trashGrid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="game-section">
+                <div class="grid-container">
+                    <div class="grid" id="grid"></div>
+                </div>
+
+                <div class="keyboard" id="keyboard"></div>
+            </div>
+
+            <div class="recommendations scrollbar-custom">
+                <h2>Recommended Words</h2>
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-label">Possible Words</div>
+                        <div class="stat-value" id="possibleCount">12972</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Letters Known</div>
+                        <div class="stat-value" id="knownLetters">0/5</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Current Row</div>
+                        <div class="stat-value" id="currentRow">1/6</div>
+                    </div>
+                </div>
+                <div class="word-list" id="wordList">
+                    <div class="loading">Calculating best words...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Comprehensive 5-letter word list with frequency scores
+        // Higher frequency = more common words (prioritized in recommendations)
+        const WORD_LIST = [
+            // BTS & ARMY specific words (highest priority - all exactly 5 letters, real words only)
+            'armys', 'bunny', 'jimin', 'wings', 'proof', 'mochi', 'shook', 'festa',
+            'tears', 'daegu', 'busan', 'seoul', 'ilsan', 'outro', 'intro', 'vocal', 'korea',
+            'album', 'stage', 'award', 'debut', 'souls', 'blood', 'sweat', 'house', 'sope',
+            'loves', 'films', 'notes', 'black', 'child', 'dream', 'youth', 'young', 'magic',
+            'still', 'yours', 'clock', 'bliss', 'abyss', 'super', 'quote', 'angel', 'peace',
+            'happy', 'seven', 'three', 'honey', 'verse', 'polar', 'agust', 'train', 'dance',
+            'vante', 'inter', 'jimmy', 'jhope', 'sweet', 'night', 'inner', 'stone', 'lives',
+            'stays', 'oppa', 'baby', 'right', 'going', 'light', 'shine', 'eomma', 'hyung',
+            'boram', 'hobie', 'cooky', 'kpop', 'hybe', 'life',
+            // Common words (frequency 100-80)
+            'about', 'after', 'again', 'agree', 'allow', 'alone', 'along', 'anger', 'apple', 'argue',
+            'arise', 'array', 'aside', 'asset', 'avoid', 'aware', 'badly', 'beach', 'began',
+            'being', 'below', 'bench', 'billy', 'birth', 'blame', 'blind', 'block',
+            'board', 'boost', 'booth', 'bound', 'brain', 'brand', 'brave', 'bread', 'break', 'breed',
+            'brief', 'bring', 'broad', 'broke', 'brown', 'build', 'built', 'buyer', 'cable', 'calif',
+            'carry', 'catch', 'cause', 'chain', 'chair', 'chart', 'chase', 'cheap', 'check', 'chest',
+            'chief', 'china', 'chose', 'civil', 'claim', 'class', 'clean', 'clear', 'click',
+            'close', 'coach', 'coast', 'could', 'count', 'court', 'cover', 'craft', 'crash',
+            'crazy', 'cream', 'crime', 'cross', 'crowd', 'crown', 'crude', 'curve', 'cycle', 'daily',
+            'dated', 'dealt', 'death', 'delay', 'depth', 'doing', 'doubt', 'dozen',
+            'draft', 'drama', 'drawn', 'dress', 'drill', 'drink', 'drive', 'drove', 'dying',
+            'eager', 'early', 'earth', 'eight', 'elite', 'empty', 'enemy', 'enjoy', 'enter', 'entry',
+            'equal', 'error', 'event', 'every', 'exact', 'exist', 'extra', 'faith', 'false', 'fault',
+            'fiber', 'field', 'fifth', 'fifty', 'fight', 'final', 'first', 'fixed', 'flash', 'fleet',
+            'floor', 'fluid', 'focus', 'force', 'forth', 'forty', 'forum', 'found', 'frame', 'frank',
+            'fraud', 'fresh', 'front', 'fruit', 'fully', 'funny', 'giant', 'given', 'glass', 'globe',
+            'grace', 'grade', 'grand', 'grant', 'grass', 'great', 'green', 'gross', 'group',
+            'grown', 'guard', 'guess', 'guest', 'guide', 'harry', 'heart', 'heavy', 'hence',
+            'henry', 'horse', 'hotel', 'human', 'ideal', 'image', 'imply', 'index',
+            'input', 'issue', 'japan', 'joint', 'jones', 'judge', 'known', 'label', 'large',
+            'laser', 'later', 'laugh', 'layer', 'learn', 'lease', 'least', 'leave', 'legal', 'lemon',
+            'level', 'lewis', 'limit', 'links', 'local', 'logic', 'loose', 'lower',
+            'lucky', 'lunch', 'lying', 'major', 'maker', 'march', 'maria', 'match', 'maybe',
+            'mayor', 'meant', 'media', 'metal', 'might', 'minor', 'minus', 'mixed', 'model', 'money',
+            'month', 'moral', 'motor', 'mount', 'mouse', 'mouth', 'movie', 'music', 'needs', 'never',
+            'newly', 'noise', 'north', 'noted', 'novel', 'nurse', 'occur', 'ocean', 'offer',
+            'often', 'order', 'other', 'ought', 'outer', 'owned', 'owner', 'paint', 'panel', 'paper',
+            'party', 'peter', 'phase', 'phone', 'photo', 'piece', 'pilot', 'pitch', 'place',
+            'plain', 'plane', 'plant', 'plate', 'point', 'pound', 'power', 'press', 'price', 'pride',
+            'prime', 'print', 'prior', 'prize', 'proud', 'prove', 'queen', 'quick', 'quiet',
+            'quite', 'radio', 'raise', 'range', 'rapid', 'ratio', 'reach', 'ready', 'refer',
+            'river', 'robin', 'roger', 'roman', 'rough', 'round', 'route', 'royal', 'rural', 'scale',
+            'scene', 'scope', 'score', 'sense', 'serve', 'shall', 'shape', 'share', 'sharp',
+            'sheet', 'shelf', 'shell', 'shift', 'shirt', 'shock', 'shoot', 'short', 'shown',
+            'sight', 'since', 'sixth', 'sixty', 'sized', 'skill', 'sleep', 'slide', 'small', 'smart',
+            'smile', 'smith', 'smoke', 'solid', 'solve', 'sorry', 'sound', 'south', 'space', 'spare',
+            'speak', 'speed', 'spend', 'spent', 'split', 'spoke', 'sport', 'staff', 'stake',
+            'stand', 'start', 'state', 'steam', 'steel', 'stick', 'stock', 'stood',
+            'store', 'storm', 'story', 'strip', 'stuck', 'study', 'stuff', 'style', 'sugar', 'suite',
+            'table', 'taken', 'taste', 'taxes', 'teach', 'terry', 'texas', 'thank',
+            'theft', 'their', 'theme', 'there', 'these', 'thick', 'thing', 'think', 'third', 'those',
+            'threw', 'throw', 'tight', 'times', 'title', 'today', 'topic', 'total', 'touch',
+            'tough', 'tower', 'track', 'trade', 'treat', 'trend', 'trial', 'tribe', 'trick',
+            'tried', 'tries', 'troop', 'truck', 'truly', 'trust', 'truth', 'twice', 'under', 'undue',
+            'union', 'unity', 'until', 'upper', 'upset', 'urban', 'usage', 'usual', 'valid', 'value',
+            'video', 'virus', 'visit', 'vital', 'voice', 'waste', 'watch', 'water', 'wheel',
+            'where', 'which', 'while', 'white', 'whole', 'whose', 'woman', 'women', 'world', 'worry',
+            'worse', 'worst', 'worth', 'would', 'wound', 'write', 'wrong', 'wrote', 'yield',
+            // Medium frequency words (frequency 79-50)
+            'abuse', 'actor', 'acute', 'admin', 'admit', 'adopt', 'adult', 'agent', 'aging', 'agony',
+            'ahead', 'aisle', 'alarm', 'alert', 'alien', 'align', 'alike', 'alive', 'alley',
+            'alloy', 'amber', 'amend', 'angle', 'angry', 'anime', 'annoy', 'antic', 'apart',
+            'arena', 'armed', 'armor', 'aroma', 'arrow', 'arson', 'ascot', 'aspen', 'atlas', 'attic',
+            'audit', 'audio', 'avert', 'awake', 'badge', 'baker', 'basin', 'basis', 'batch', 'beast',
+            'belly', 'berry', 'bikes', 'bingo', 'birds', 'blade', 'bland', 'blank', 'blast', 'blaze',
+            'bleed', 'blend', 'bless', 'blimp', 'blink', 'bloat', 'blown', 'blunt', 'blurt',
+            'blush', 'bogey', 'bogus', 'bosom', 'bossy', 'botch', 'bough', 'bounce', 'boxer', 'brake',
+            'brass', 'brawl', 'bravo', 'brawn', 'bride', 'brine', 'brink', 'briny', 'brisk', 'brood',
+            'broom', 'broth', 'brush', 'brute', 'buddy', 'bugle', 'bulge', 'bulky', 'bully', 'bunch',
+            'burnt', 'burst', 'cache', 'cadet', 'cages', 'camel', 'canal', 'candy', 'canny',
+            'canoe', 'canon', 'caper', 'cargo', 'carol', 'caste', 'cater', 'cease', 'cedar', 'chalk',
+            'champ', 'chaos', 'chard', 'charm', 'cheek', 'cheer', 'chess', 'chick', 'chill', 'chimp',
+            'chirp', 'choke', 'chord', 'chore', 'chosen', 'chuck', 'chump', 'chunk', 'churn', 'cider',
+            'cigar', 'cinch', 'circa', 'civic', 'clamp', 'clang', 'clank', 'clash', 'clasp', 'classy',
+            'claws', 'clays', 'clench', 'clerk', 'cliff', 'climb', 'cling', 'cloak', 'clone', 'cloth',
+            'cloud', 'clout', 'clove', 'clown', 'cluck', 'clump', 'clung', 'cobra',
+            'cocoa', 'colon', 'color', 'comet', 'comic', 'comma', 'conch', 'condo', 'coral', 'corns',
+            'couch', 'cough', 'count', 'coupe', 'coves', 'cower', 'crabs', 'crack', 'crank', 'crate',
+            'crave', 'crawl', 'craze', 'creek', 'creep', 'creme', 'crepe', 'crept', 'crest', 'crib',
+            'cried', 'crisp', 'croak', 'crock', 'crook', 'croon', 'crops', 'croup', 'crown', 'crucial',
+            'cruel', 'crumb', 'crush', 'crust', 'crypt', 'cubic', 'cumin', 'curly', 'curry', 'curse',
+            'cutie', 'dagger', 'dairy', 'daisy', 'dandy', 'debug', 'decal', 'decay',
+            'decor', 'decoy', 'deity', 'delta', 'delve', 'demon', 'demur', 'denim', 'dense', 'depot',
+            'derby', 'deter', 'deuce', 'diary', 'digit', 'dimly', 'diner', 'dingo', 'dingy',
+            'dirty', 'disco', 'ditch', 'ditto', 'ditty', 'diver', 'dizzy', 'dodge', 'dodgy', 'dogma',
+            'dolly', 'donor', 'donut', 'dopey', 'douse', 'dowdy', 'downy', 'drain',
+            'drake', 'drank', 'drape', 'dread', 'dried', 'drier', 'drift', 'drone', 'drool', 'droop',
+            'drown', 'drums', 'drunk', 'dryer', 'dryly', 'duchy', 'dully', 'dummy', 'dumpy', 'dunce',
+            'dusky', 'dusty', 'duvet', 'dwarf', 'dwell', 'dwelt', 'early', 'earth', 'easel', 'ebony',
+            'ebook', 'edict', 'egret', 'eject', 'elbow', 'elder', 'elect', 'elegy', 'elfin', 'elicit',
+            'elope', 'elude', 'elves', 'email', 'ember', 'emcee', 'emote', 'endow', 'enema', 'envoy',
+            'epoch', 'epoxy', 'equip', 'erase', 'erect', 'erode', 'erupt', 'essay', 'ester', 'ether',
+            'ethic', 'ethos', 'evade', 'evict', 'evoke', 'exalt', 'excel', 'exert', 'exile', 'expel',
+            'extol', 'fable', 'facet', 'faint', 'fairy', 'faker', 'fancy', 'fatal', 'fatso', 'fatty',
+            'fauna', 'favor', 'feast', 'fence', 'ferry', 'fetal', 'fetch', 'fever', 'fewer', 'fibre',
+            'ficus', 'fiend', 'fiery', 'fifty', 'filth', 'finch', 'finer', 'first', 'fishy', 'flair',
+            'flake', 'flaky', 'flame', 'flank', 'flare', 'flaunt', 'fleck', 'flesh', 'flick', 'flier',
+            'fling', 'flint', 'flirt', 'float', 'flock', 'flood', 'flora', 'floss', 'flour', 'flout',
+            'flown', 'fluff', 'fluke', 'flung', 'flunk', 'flush', 'flute', 'foamy', 'focal', 'foggy',
+            'foist', 'folio', 'folly', 'fonts', 'forge', 'forgo', 'forte', 'forth', 'forty', 'forum',
+            'fossa', 'foyer', 'frail', 'fray', 'freak', 'freed', 'freer', 'fresh', 'friar', 'fried',
+            'frill', 'frisk', 'frizz', 'frock', 'frogs', 'frond', 'frost', 'froth', 'frown', 'froze',
+            'fruit', 'fudge', 'fugue', 'fully', 'fumed', 'fungi', 'funky', 'funny', 'furor', 'furry',
+            'fussy', 'fusty', 'fuzzy', 'gaffe', 'gaily', 'gamer', 'gamma', 'gamut', 'gassy', 'gaudy',
+            'gauge', 'gaunt', 'gauze', 'gavel', 'gawky', 'gecko', 'geese', 'genie', 'genre', 'ghost',
+            'ghoul', 'giddy', 'giggle', 'gills', 'girly', 'girth', 'given', 'glade', 'gland', 'glare',
+            'glaze', 'gleam', 'glean', 'glide', 'glint', 'gloat', 'globe', 'gloom', 'glory', 'gloss',
+            'glove', 'gnash', 'gnome', 'godly', 'golem', 'goner', 'gooey', 'goofy', 'goose', 'gorge',
+            'gotcha', 'gouge', 'gourd', 'grail', 'grain', 'grant', 'grape', 'graph', 'grasp', 'grate',
+            'grave', 'gravy', 'graze', 'greed', 'greek', 'greet', 'grief', 'grill', 'grime', 'grimy',
+            'grind', 'gripe', 'grist', 'groan', 'groin', 'groom', 'grope', 'growl', 'gruel', 'gruff',
+            'grunt', 'guano', 'guard', 'guava', 'guild', 'guilt', 'guise', 'gulch', 'gully', 'gumbo',
+            'gummy', 'guppy', 'gusto', 'gusty', 'gypsy', 'habit', 'haiku', 'hail', 'halo', 'halve',
+            'handy', 'hardy', 'harem', 'harpy', 'harsh', 'haste', 'hasty', 'hatch', 'haunt', 'haute',
+            'haven', 'havoc', 'hazel', 'hazy', 'heady', 'heart', 'heath', 'heave', 'heavy', 'hedge',
+            'hefty', 'heist', 'helix', 'hello', 'helm', 'herby', 'heron', 'hippo', 'hippy', 'hitch',
+            'hoard', 'hobby', 'hoist', 'holly', 'homer', 'honor', 'hoody', 'hooey', 'hooky',
+            'horde', 'horny', 'hound', 'hovel', 'hover', 'howdy', 'human', 'humid', 'humor',
+            'humus', 'hunch', 'hunky', 'hurry', 'husky', 'hussy', 'hutch', 'hydro', 'hyena', 'hyper',
+            'ichor', 'icing', 'ideal', 'idiom', 'idiot', 'idler', 'image', 'imbue', 'impel', 'inane',
+            'inbox', 'incur', 'inept', 'inert', 'infer', 'ingot', 'inlay', 'inlet',
+            'input', 'ionic', 'irate', 'irony', 'islet', 'ivory', 'jaunt', 'jeans',
+            'jelly', 'jerky', 'jetty', 'jewel', 'jiffy', 'joint', 'joker', 'jolly', 'joust',
+            'judge', 'juice', 'juicy', 'julep', 'jumbo', 'jumpy', 'junco', 'junky', 'junto', 'juror',
+            'kales', 'karma', 'kayak', 'kazoo', 'kebab', 'khaki', 'kiosk', 'kitty', 'klutz', 'knack',
+            'knave', 'knead', 'kneed', 'kneel', 'knelt', 'knife', 'knock', 'knoll', 'known', 'koala',
+            'krill', 'kudos', 'ladle', 'lager', 'lance', 'lanky', 'lapel', 'lapse', 'larch', 'larva',
+            'lasso', 'latch', 'later', 'lathe', 'latte', 'lauds', 'lavas', 'lawns', 'laxly', 'layer',
+            'leach', 'leafy', 'leaky', 'leapt', 'leash', 'lease', 'leech', 'leery', 'lefty', 'lemon',
+            'lemur', 'leper', 'libel', 'lingo', 'liner', 'livid', 'llama', 'loamy',
+            'loath', 'lobby', 'local', 'locus', 'lodge', 'lofty', 'login', 'loopy', 'lorry', 'loser',
+            'louse', 'lousy', 'lumen', 'lumpy', 'lunar', 'lunch', 'lunge', 'lurch', 'lurid', 'lusty',
+            'lying', 'lymph', 'lynch', 'lyric', 'macaw', 'macho', 'macro', 'madam', 'madly', 'mafia',
+            'magma', 'maize', 'major', 'mambo', 'mamma', 'mammy', 'manga', 'mange', 'mango',
+            'mangy', 'mania', 'manic', 'manly', 'manor', 'maple', 'march', 'marry', 'marsh', 'mason',
+            'masse', 'match', 'matey', 'matte', 'mauve', 'maxim', 'mealy', 'meaty', 'mecca', 'medal',
+            'media', 'medic', 'melee', 'melon', 'mercy', 'merge', 'merit', 'merry', 'metal', 'meter',
+            'metro', 'micro', 'midge', 'midst', 'might', 'milky', 'mimic', 'mince', 'miner', 'minim',
+            'minty', 'minus', 'mirth', 'miser', 'missy', 'mocha', 'modal', 'model', 'modem', 'mogul',
+            'moist', 'molar', 'moldy', 'molly', 'moody', 'moose', 'moral', 'morel', 'morph', 'mossy',
+            'motel', 'motif', 'motor', 'motto', 'moult', 'mound', 'mount', 'mourn', 'mouse', 'mousy',
+            'mouth', 'mover', 'movie', 'mower', 'mucky', 'mucus', 'muddy', 'mulch', 'mummy', 'munch',
+            'mural', 'murky', 'mushy', 'music', 'musky', 'musty', 'myrrh', 'nacho', 'nadir', 'naggy',
+            'naiad', 'naive', 'nanny', 'nasal', 'nasty', 'natal', 'naval', 'navel', 'needy', 'neigh',
+            'nerdy', 'nerve', 'never', 'newer', 'newly', 'niche', 'niece', 'nifty', 'ninja',
+            'ninth', 'noble', 'nobly', 'nodal', 'noise', 'noisy', 'nomad', 'nooky', 'noose', 'north',
+            'notch', 'noted', 'novel', 'nudge', 'nurse', 'nutty', 'nylon', 'nymph', 'oaken', 'oakum',
+            'oasis', 'ocean', 'octal', 'octet', 'odder', 'oddly', 'offal', 'offer', 'often', 'ogler',
+            'olive', 'omega', 'onion', 'onset', 'opals', 'opera', 'opine', 'opium', 'optic', 'orbit',
+            'order', 'organ', 'other', 'otter', 'ought', 'ounce', 'outdo', 'outer', 'outgo', 'ovary',
+            'ovate', 'overt', 'owing', 'owner', 'oxide', 'ozone', 'paced', 'pacer', 'paddy', 'pagan',
+            'pager', 'pains', 'paint', 'paler', 'palsy', 'panda', 'panel', 'panic', 'pansy', 'pants',
+            'panty', 'papal', 'papaw', 'paper', 'parer', 'parka', 'parry', 'parse', 'party', 'pasta',
+            'paste', 'pasty', 'patch', 'patio', 'patsy', 'patty', 'pause', 'peach', 'pearl',
+            'pecan', 'pedal', 'penal', 'pence', 'penne', 'penny', 'perch', 'peril', 'perky', 'pesky',
+            'pesto', 'petal', 'petty', 'phase', 'phone', 'phony', 'photo', 'piano', 'picky', 'piece',
+            'piety', 'piggy', 'pigmy', 'pilot', 'pinch', 'piney', 'pinky', 'pinto', 'piper', 'pique',
+            'pithy', 'pivot', 'pixel', 'pixie', 'pizza', 'place', 'plaid', 'plain', 'plait', 'plane',
+            'plank', 'plant', 'plate', 'plaza', 'plead', 'pleat', 'plied', 'plier', 'plonk', 'plume',
+            'plump', 'plunk', 'plush', 'poach', 'podgy', 'poise', 'poker', 'polka', 'polyp',
+            'pooch', 'poppy', 'porch', 'poser', 'posit', 'posse', 'pouch', 'pound', 'pouty', 'power',
+            'prawn', 'preen', 'press', 'price', 'prick', 'pride', 'pried', 'prime', 'primo', 'print',
+            'prior', 'prism', 'privy', 'prize', 'probe', 'prone', 'prong', 'prose', 'proud',
+            'prove', 'prowl', 'proxy', 'prude', 'prune', 'psalm', 'pubic', 'pudge', 'pudgy', 'puffy',
+            'pulse', 'punch', 'pupil', 'puppy', 'puree', 'purer', 'purge', 'purse', 'pushy', 'putty',
+            'pygmy', 'quack', 'quaff', 'quail', 'quake', 'qualm', 'quark', 'quart', 'quash', 'quasi',
+            'quay', 'queen', 'queer', 'quell', 'query', 'quest', 'queue', 'quick', 'quiet', 'quill',
+            'quilt', 'quirk', 'quite', 'quota', 'quoth', 'rabbi', 'rabid', 'racer', 'radar',
+            'radii', 'radio', 'radon', 'rainy', 'raise', 'rajah', 'rally', 'ralph', 'ramen', 'ranch',
+            'randy', 'range', 'rank', 'rapid', 'rarer', 'raspy', 'ratio', 'ratty', 'raven', 'rayon',
+            'razor', 'reach', 'react', 'ready', 'realm', 'reams', 'reap', 'rebel', 'recap', 'recur',
+            'recut', 'redid', 'redly', 'reedy', 'refer', 'refit', 'regal', 'rehab', 'reign', 'relax',
+            'relay', 'relic', 'remit', 'remix', 'renal', 'renew', 'repay', 'repel', 'reply', 'rerun',
+            'reset', 'resin', 'retch', 'retro', 'retry', 'reuse', 'revel', 'revue', 'rhino', 'rhyme',
+            'rider', 'ridge', 'rifle', 'right', 'rigid', 'rigor', 'rinse', 'ripen', 'riper', 'risen',
+            'riser', 'risky', 'rival', 'river', 'rivet', 'roach', 'roast', 'robin', 'robot', 'rocky',
+            'rodeo', 'roger', 'rogue', 'roomy', 'roost', 'roper', 'rotor', 'rouge', 'rough', 'round',
+            'rouse', 'route', 'rover', 'rowdy', 'rower', 'royal', 'ruddy', 'ruder', 'rugby', 'ruler',
+            'rumba', 'rumor', 'rupee', 'rural', 'rushy', 'rusty', 'sadly', 'safer', 'saint', 'salad',
+            'sally', 'salon', 'salsa', 'salty', 'salve', 'salvo', 'sandy', 'saner', 'sappy', 'sari',
+            'sassy', 'satin', 'satyr', 'sauce', 'saucy', 'sauna', 'saute', 'savor', 'savoy', 'savvy',
+            'scald', 'scale', 'scalp', 'scamp', 'scant', 'scare', 'scarf', 'scary', 'scene', 'scent',
+            'scion', 'scoff', 'scold', 'scone', 'scoop', 'scoot', 'scope', 'score', 'scorn', 'scour',
+            'scout', 'scowl', 'scram', 'scrap', 'scree', 'screw', 'scrub', 'scrum', 'scuba', 'secco',
+            'sedan', 'seedy', 'segue', 'seize', 'semen', 'sense', 'sepia', 'sepoy', 'serf', 'serif',
+            'serum', 'serve', 'setup', 'seven', 'sever', 'sewer', 'shack', 'shade', 'shady', 'shaft',
+            'shake', 'shaky', 'shale', 'shall', 'shalt', 'shame', 'shank', 'shape', 'shard', 'share',
+            'shark', 'sharp', 'shave', 'shawl', 'sheaf', 'shear', 'sheen', 'sheep', 'sheer', 'sheet',
+            'sheik', 'shelf', 'shell', 'shied', 'shift', 'shim', 'shin', 'shine', 'shiny', 'shire',
+            'shirk', 'shirt', 'shoal', 'shock', 'shone', 'shook', 'shoot', 'shore', 'shorn', 'short',
+            'shout', 'shove', 'shown', 'showy', 'shred', 'shrew', 'shrub', 'shrug', 'shuck', 'shunt',
+            'shush', 'shyly', 'siege', 'sieve', 'sight', 'sigma', 'silky', 'silly', 'since', 'sinew',
+            'singe', 'siren', 'sissy', 'sixth', 'sixty', 'size', 'skate', 'skein', 'skimp', 'skirt',
+            'skulk', 'skull', 'skunk', 'slack', 'slain', 'slang', 'slant', 'slash', 'slate', 'slave',
+            'sleek', 'sleep', 'sleet', 'slept', 'slice', 'slick', 'slide', 'slime', 'slimy', 'sling',
+            'slink', 'slope', 'slosh', 'sloth', 'slump', 'slung', 'slunk', 'slurp', 'slush', 'slyly',
+            'smack', 'small', 'smart', 'smash', 'smear', 'smell', 'smelt', 'smile', 'smirk', 'smite',
+            'smith', 'smock', 'smoke', 'smoky', 'smote', 'snack', 'snafu', 'snail', 'snake', 'snaky',
+            'snare', 'snarl', 'sneak', 'sneer', 'snide', 'sniff', 'snipe', 'snoop', 'snore', 'snort',
+            'snout', 'snowy', 'snuck', 'snuff', 'soapy', 'sober', 'socal', 'sock', 'soddy', 'soda',
+            'soggy', 'solar', 'sonar', 'sonic', 'sooth', 'sooty', 'sorry', 'sound', 'soupy', 'south',
+            'sower', 'space', 'spade', 'spare', 'spark', 'spasm', 'spawn', 'speak', 'spear', 'speck',
+            'speed', 'spell', 'spelt', 'spend', 'spent', 'sperm', 'spice', 'spicy', 'spied', 'spike',
+            'spiky', 'spill', 'spine', 'spiny', 'spiral', 'spire', 'spite', 'splat', 'split', 'spoil',
+            'spoke', 'spoof', 'spook', 'spool', 'spoon', 'spore', 'sport', 'spout', 'spray', 'spree',
+            'sprig', 'spry', 'spud', 'spume', 'spunk', 'spurn', 'spurt', 'squad', 'squat', 'squib',
+            'squid', 'stack', 'staff', 'stage', 'staid', 'stain', 'stair', 'stake', 'stale', 'stalk',
+            'stall', 'stamp', 'stand', 'stank', 'stare', 'stark', 'start', 'stash', 'state', 'stave',
+            'stead', 'steak', 'steal', 'steam', 'steed', 'steel', 'steep', 'steer', 'stein', 'stern',
+            'stick', 'stiff', 'still', 'stilt', 'sting', 'stink', 'stint', 'stock', 'stoic', 'stomp',
+            'stone', 'stony', 'stood', 'stool', 'stoop', 'store', 'stork', 'storm', 'story', 'stout',
+            'stove', 'strap', 'straw', 'stray', 'strip', 'strut', 'stuck', 'study', 'stuff', 'stump',
+            'stung', 'stunk', 'stunt', 'style', 'suave', 'sugar', 'suing', 'suite', 'sulky', 'sully',
+            'sumac', 'sunny', 'super', 'surer', 'surge', 'surly', 'sushi', 'swab', 'swam', 'swami',
+            'swamp', 'swank', 'swarm', 'swash', 'swath', 'swear', 'sweat', 'sweep', 'sweet', 'swell',
+            'swept', 'swift', 'swill', 'swim', 'swine', 'swing', 'swipe', 'swirl', 'swish', 'swiss',
+            'swoon', 'swoop', 'sword', 'swore', 'sworn', 'swum', 'swung', 'synod', 'synth', 'syrup',
+            'tabby', 'table', 'taboo', 'tacit', 'tacky', 'taffy', 'taint', 'taken', 'taker', 'tally',
+            'talon', 'tamer', 'tango', 'tangy', 'taper', 'tapir', 'tardy', 'tarot', 'tarry', 'tart',
+            'taste', 'tasty', 'tatty', 'taunt', 'tawny', 'teach', 'teary', 'tease', 'teddy', 'teeth',
+            'tempo', 'tenet', 'tenor', 'tense', 'tenth', 'tepee', 'tepid', 'terra', 'terry', 'terse',
+            'test', 'testy', 'thank', 'theft', 'their', 'theme', 'there', 'these', 'thick', 'thief',
+            'thigh', 'thing', 'think', 'third', 'thorn', 'those', 'three', 'threw', 'throb', 'throw',
+            'thrum', 'thumb', 'thump', 'thyme', 'tiara', 'tibia', 'tidal', 'tiger', 'tight', 'tilde',
+            'timer', 'timid', 'tinct', 'tinge', 'tipsy', 'titan', 'tithe', 'title', 'toast', 'today',
+            'toddy', 'token', 'tonal', 'tonga', 'tonic', 'tooth', 'topaz', 'topic', 'torch', 'torso',
+            'torus', 'total', 'totem', 'touch', 'tough', 'towel', 'tower', 'toxic', 'toxin', 'trace',
+            'track', 'tract', 'trade', 'trail', 'train', 'trait', 'tramp', 'trash', 'trawl', 'tread',
+            'treat', 'treaty', 'treble', 'tree', 'trek', 'trend', 'triad', 'trial', 'tribe', 'trick',
+            'tried', 'trike', 'trill', 'trite', 'troll', 'troop', 'trope', 'trout', 'trove', 'truce',
+            'truck', 'truer', 'truly', 'trump', 'trunk', 'truss', 'trust', 'truth', 'tryst', 'tuber',
+            'tulip', 'tulle', 'tumor', 'tunic', 'turbo', 'tutor', 'twang', 'tweak', 'tweed', 'tweet',
+            'twelve', 'twenty', 'twice', 'twine', 'twirl', 'twist', 'twixt', 'tying', 'udder', 'ukase',
+            'ultra', 'umber', 'umbra', 'umpire', 'uncle', 'under', 'undo', 'undue', 'unfed', 'unify',
+            'union', 'unite', 'unity', 'unlit', 'unmet', 'unpeg', 'unpin', 'unset', 'until', 'unwed',
+            'unzip', 'upper', 'upset', 'urban', 'urea', 'urged', 'urine', 'usage', 'usher', 'using',
+            'usual', 'usurp', 'usury', 'utter', 'vacua', 'vague', 'valet', 'valid', 'valor', 'value',
+            'valve', 'vapid', 'vapor', 'vault', 'vaunt', 'vegan', 'venom', 'venue', 'verge', 'verse',
+            'verso', 'verve', 'vicar', 'video', 'vigil', 'vigor', 'villa', 'vinyl', 'viola', 'viper',
+            'viral', 'vireo', 'visit', 'visor', 'vista', 'vital', 'vivid', 'vixen', 'vocal', 'vodka',
+            'vogue', 'voice', 'voila', 'vomit', 'voter', 'vouch', 'vowel', 'vying', 'wacky', 'wafer',
+            'wager', 'wagon', 'waist', 'waive', 'waltz', 'warty', 'waste', 'watch', 'water', 'waver',
+            'waxen', 'weary', 'weave', 'wedge', 'weedy', 'weigh', 'weird', 'welsh', 'wench', 'wetly',
+            'whack', 'whale', 'wharf', 'wheat', 'wheel', 'whelp', 'where', 'which', 'whiff', 'while',
+            'whim', 'whine', 'whiny', 'whip', 'whirl', 'whisk', 'white', 'whole', 'whomp', 'whoop',
+            'whore', 'whose', 'widen', 'wider', 'widow', 'width', 'wield', 'wight', 'willy', 'wimpy',
+            'wince', 'winch', 'windy', 'wine', 'wiper', 'wired', 'wiser', 'wispy', 'witch', 'witty',
+            'woke', 'woman', 'women', 'woody', 'wooer', 'wordy', 'world', 'worry', 'worse', 'worst',
+            'worth', 'would', 'wound', 'woven', 'wrack', 'wrath', 'wreak', 'wreck', 'wren', 'wrest',
+            'wring', 'wrist', 'write', 'wrong', 'wrote', 'wrung', 'wryer', 'wryly', 'xenon', 'yacht',
+            'yahoo', 'yearn', 'yeast', 'yield', 'yokel', 'young', 'yours', 'youth', 'yummy', 'zebra',
+            'zesty', 'zilch', 'zingy', 'zippy', 'zonal', 'zoned'
+        ];
+
+        // Letter frequency in English (for scoring)
+        const LETTER_FREQ = {
+            'e': 12.70, 'a': 8.17, 'r': 7.59, 'i': 7.55, 'o': 7.51, 't': 6.95, 'n': 6.65, 's': 6.32,
+            'l': 5.49, 'c': 4.54, 'u': 3.63, 'd': 3.38, 'p': 3.16, 'm': 3.01, 'h': 2.98, 'g': 2.47,
+            'b': 2.07, 'f': 1.81, 'y': 1.78, 'w': 1.29, 'k': 1.11, 'v': 1.01, 'x': 0.29, 'z': 0.27,
+            'j': 0.20, 'q': 0.20
+        };
+
+        // Game state
+        let currentRow = 0;
+        let currentCol = 0;
+        let letterStates = {}; // Track letter states globally
+        let tileStates = []; // Track each tile's state
+
+        // Deduplicate word list to prevent duplicate recommendations
+        const uniqueWordList = [...new Set(WORD_LIST)];
+        let possibleWords = [...uniqueWordList];
+
+        // Admin word management system
+        const BTS_WORD_COUNT = 72; // Number of BTS-specific words at the start of WORD_LIST
+
+        // Initialize word database and remove duplicates (keep BTS version, remove common duplicates)
+        function initializeWordDatabase() {
+            const btsWords = WORD_LIST.slice(0, BTS_WORD_COUNT);
+            const commonWords = WORD_LIST.slice(BTS_WORD_COUNT);
+            const btsWordSet = new Set(btsWords);
+
+            // Filter out common words that already exist as BTS words
+            const filteredCommonWords = commonWords.filter(word => !btsWordSet.has(word));
+
+            return [...btsWords, ...filteredCommonWords];
+        }
+
+        let wordDatabase = initializeWordDatabase();
+        let trashBin = [];
+        let selectedWords = new Set();
+        let currentSearchTerm = '';
+        let currentSortOrder = 'alpha-asc';
+        let currentFilter = 'all';
+
+        // Supabase sync functions
+        async function loadFromSupabase() {
+            if (!window.supabaseClient) {
+                console.warn('Supabase not initialized, using local data');
+                return;
+            }
+
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('word_lists')
+                    .select('*')
+                    .eq('id', 'main')
+                    .single();
+
+                if (error) {
+                    if (error.code === 'PGRST116') {
+                        // No data exists yet - initialize with current word list
+                        console.log('No data in Supabase, initializing...');
+                        await saveToSupabase();
+                    } else {
+                        console.error('Error loading from Supabase:', error);
+                    }
+                } else if (data) {
+                    if (data.words && Array.isArray(data.words) && data.words.length > 0) {
+                        wordDatabase = data.words;
+                        console.log('Loaded word database from Supabase:', wordDatabase.length, 'words');
+                    } else {
+                        // Database is empty, initialize with local word list
+                        console.log('Database empty, initializing with local word list...');
+                        await saveToSupabase();
+                    }
+                    if (data.trash && Array.isArray(data.trash)) {
+                        trashBin = data.trash;
+                    }
+                }
+
+                // Set up real-time listener for changes
+                const subscription = window.supabaseClient
+                    .channel('word_lists_changes')
+                    .on('postgres_changes',
+                        { event: '*', schema: 'public', table: 'word_lists', filter: 'id=eq.main' },
+                        (payload) => {
+                            console.log('Received update from Supabase');
+                            if (payload.new && payload.new.words) {
+                                wordDatabase = payload.new.words;
+                                if (document.getElementById('adminModal').style.display === 'flex') {
+                                    refreshAdminView();
+                                }
+                                updateRecommendations();
+                            }
+                            if (payload.new && payload.new.trash) {
+                                trashBin = payload.new.trash;
+                            }
+                        }
+                    )
+                    .subscribe();
+
+            } catch (error) {
+                console.error('Error in loadFromSupabase:', error);
+            }
+        }
+
+        async function saveToSupabase() {
+            if (!window.supabaseClient) {
+                console.warn('Supabase not initialized, cannot save');
+                return;
+            }
+
+            try {
+                const { error } = await window.supabaseClient
+                    .from('word_lists')
+                    .upsert({
+                        id: 'main',
+                        words: wordDatabase,
+                        trash: trashBin,
+                        last_updated: new Date().toISOString()
+                    });
+
+                if (error) {
+                    console.error('Error saving to Supabase:', error);
+                } else {
+                    console.log('Saved to Supabase');
+                }
+            } catch (error) {
+                console.error('Error in saveToSupabase:', error);
+            }
+        }
+
+        // Admin keyboard shortcut: Ctrl+Shift+A
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+                e.preventDefault();
+                openAdminModal();
+            }
+        });
+
+        function openAdminModal() {
+            document.getElementById('adminModal').style.display = 'flex';
+            switchTab('dictionary');
+            refreshAdminView();
+        }
+
+        function closeAdminModal() {
+            document.getElementById('adminModal').style.display = 'none';
+            selectedWords.clear();
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tabName);
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === tabName + 'Tab');
+            });
+            if (tabName === 'dictionary') renderWordGrid();
+            if (tabName === 'trash') renderTrashGrid();
+        }
+
+        function refreshAdminView() {
+            updateAdminStats();
+            renderWordGrid();
+            renderTrashGrid();
+        }
+
+        function updateAdminStats() {
+            const btsWords = wordDatabase.slice(0, BTS_WORD_COUNT);
+            const commonWords = wordDatabase.slice(BTS_WORD_COUNT);
+
+            document.getElementById('adminTotalWords').textContent = wordDatabase.length;
+            document.getElementById('adminBTSWords').textContent = btsWords.length;
+            document.getElementById('adminCommonWords').textContent = commonWords.length;
+            document.getElementById('adminTrashCount').textContent = trashBin.length;
+        }
+
+        function getFilteredAndSortedWords() {
+            let words = [...wordDatabase].map((word, idx) => ({
+                word,
+                isBTS: idx < BTS_WORD_COUNT
+            }));
+
+            // Apply filter
+            if (currentFilter === 'bts') {
+                words = words.filter(w => w.isBTS);
+            } else if (currentFilter === 'common') {
+                words = words.filter(w => !w.isBTS);
+            }
+
+            // Apply search
+            if (currentSearchTerm) {
+                words = words.filter(w => w.word.includes(currentSearchTerm.toLowerCase()));
+            }
+
+            // Apply sort
+            if (currentSortOrder === 'alpha-asc') {
+                words.sort((a, b) => a.word.localeCompare(b.word));
+            } else if (currentSortOrder === 'alpha-desc') {
+                words.sort((a, b) => b.word.localeCompare(a.word));
+            } else if (currentSortOrder === 'length') {
+                words.sort((a, b) => a.word.length - b.word.length || a.word.localeCompare(b.word));
+            }
+
+            return words;
+        }
+
+        function renderWordGrid() {
+            const grid = document.getElementById('wordGrid');
+            const words = getFilteredAndSortedWords();
+
+            if (words.length === 0) {
+                grid.innerHTML = '<p class="hint">No words found</p>';
+                return;
+            }
+
+            grid.innerHTML = words.map(({ word, isBTS }) => `
+                <div class="word-item-admin ${isBTS ? 'bts-word' : ''} ${selectedWords.has(word) ? 'selected' : ''}"
+                     onclick="toggleWordSelection('${word}')">
+                    <div class="word-text-admin">${word.toUpperCase()}</div>
+                    <div class="word-actions">
+                        <button class="icon-btn" onclick="event.stopPropagation(); toggleBTSStatus('${word}', ${isBTS})" title="${isBTS ? 'Unmark as BTS' : 'Mark as BTS'}">${isBTS ? '💜' : '🤍'}</button>
+                        <button class="icon-btn delete" onclick="event.stopPropagation(); deleteWord('${word}')" title="Delete">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleWordSelection(word) {
+            if (selectedWords.has(word)) {
+                selectedWords.delete(word);
+            } else {
+                selectedWords.add(word);
+            }
+            renderWordGrid();
+        }
+
+        function selectAll() {
+            const words = getFilteredAndSortedWords();
+            words.forEach(({ word }) => selectedWords.add(word));
+            renderWordGrid();
+        }
+
+        function deselectAll() {
+            selectedWords.clear();
+            renderWordGrid();
+        }
+
+        function toggleBTSStatus(word, currentlyBTS) {
+            const idx = wordDatabase.indexOf(word);
+            if (idx === -1) return;
+
+            // Remove from current position
+            wordDatabase.splice(idx, 1);
+
+            // Add to new position
+            if (currentlyBTS) {
+                // Moving from BTS to common - add at end
+                wordDatabase.push(word);
+            } else {
+                // Moving from common to BTS - add at end of BTS section
+                wordDatabase.splice(BTS_WORD_COUNT, 0, word);
+            }
+
+            // Remove any duplicates that might exist in the other section
+            const firstOccurrence = wordDatabase.indexOf(word);
+            for (let i = wordDatabase.length - 1; i > firstOccurrence; i--) {
+                if (wordDatabase[i] === word) {
+                    wordDatabase.splice(i, 1);
+                }
+            }
+
+            updateWordList();
+            refreshAdminView();
+        }
+
+        function deleteWord(word) {
+            if (!confirm(`Are you sure you want to delete "${word.toUpperCase()}"?`)) {
+                return;
+            }
+            moveToTrash([word]);
+        }
+
+        function bulkDelete() {
+            if (selectedWords.size === 0) {
+                alert('No words selected!');
+                return;
+            }
+            if (!confirm(`Delete ${selectedWords.size} selected word(s)?`)) {
+                return;
+            }
+            moveToTrash([...selectedWords]);
+            selectedWords.clear();
+        }
+
+        function moveToTrash(words) {
+            words.forEach(word => {
+                const idx = wordDatabase.indexOf(word);
+                if (idx !== -1) {
+                    const isBTS = idx < BTS_WORD_COUNT;
+                    wordDatabase.splice(idx, 1);
+                    trashBin.push({ word, isBTS, deletedAt: Date.now() });
+                }
+            });
+            saveTrashBin();
+            updateWordList();
+            refreshAdminView();
+        }
+
+        function addSingleWord() {
+            const input = document.getElementById('singleWordInput');
+            const word = input.value.toLowerCase().trim();
+            const isBTS = document.getElementById('isBTSWord').checked;
+
+            if (!validateWord(word)) return;
+
+            if (wordDatabase.includes(word)) {
+                alert('Word already exists in dictionary!');
+                return;
+            }
+
+            if (trashBin.some(item => item.word === word)) {
+                if (confirm('This word is in the trash. Restore it instead?')) {
+                    restoreWord(word);
+                }
+                return;
+            }
+
+            // Add to appropriate section
+            if (isBTS) {
+                wordDatabase.splice(BTS_WORD_COUNT, 0, word);
+            } else {
+                wordDatabase.push(word);
+            }
+
+            updateWordList();
+            input.value = '';
+            document.getElementById('isBTSWord').checked = false;
+            refreshAdminView();
+            alert(`Added "${word.toUpperCase()}" successfully!`);
+        }
+
+        function bulkAddWords() {
+            const input = document.getElementById('bulkWordInput');
+            const text = input.value;
+            const isBTS = document.getElementById('bulkIsBTSWord').checked;
+
+            const words = text.split(/[\n,]+/).map(w => w.trim().toLowerCase()).filter(w => w);
+            const validWords = [];
+            const skipped = [];
+
+            words.forEach(word => {
+                if (!validateWord(word, false)) {
+                    skipped.push(word);
+                } else if (wordDatabase.includes(word)) {
+                    skipped.push(`${word} (duplicate)`);
+                } else {
+                    validWords.push(word);
+                }
+            });
+
+            if (validWords.length === 0) {
+                alert('No valid words to add!');
+                return;
+            }
+
+            // Add all valid words
+            validWords.forEach(word => {
+                if (isBTS) {
+                    wordDatabase.splice(BTS_WORD_COUNT, 0, word);
+                } else {
+                    wordDatabase.push(word);
+                }
+            });
+
+            updateWordList();
+            input.value = '';
+            document.getElementById('bulkIsBTSWord').checked = false;
+            refreshAdminView();
+
+            let message = `Added ${validWords.length} word(s)!`;
+            if (skipped.length > 0) {
+                message += `\n\nSkipped ${skipped.length} word(s):\n${skipped.slice(0, 10).join(', ')}${skipped.length > 10 ? '...' : ''}`;
+            }
+            alert(message);
+        }
+
+        function validateWord(word, showAlert = true) {
+            if (word.length !== 5) {
+                if (showAlert) alert('Word must be exactly 5 letters!');
+                return false;
+            }
+            if (!/^[a-z]+$/.test(word)) {
+                if (showAlert) alert('Word must contain only letters!');
+                return false;
+            }
+            return true;
+        }
+
+        function renderTrashGrid() {
+            const grid = document.getElementById('trashGrid');
+
+            if (trashBin.length === 0) {
+                grid.innerHTML = '<p class="hint">Trash bin is empty</p>';
+                return;
+            }
+
+            const sorted = [...trashBin].sort((a, b) => b.deletedAt - a.deletedAt);
+
+            grid.innerHTML = sorted.map(({ word, isBTS }) => `
+                <div class="word-item-admin trash-item ${isBTS ? 'bts-word' : ''}">
+                    <div class="word-text-admin">${word.toUpperCase()}</div>
+                    <div class="word-actions">
+                        <button class="icon-btn" onclick="restoreWord('${word}')" title="Restore">↩️</button>
+                        <button class="icon-btn delete" onclick="permanentDelete('${word}')" title="Permanent Delete">❌</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function restoreWord(word) {
+            const idx = trashBin.findIndex(item => item.word === word);
+            if (idx === -1) return;
+
+            const item = trashBin[idx];
+            trashBin.splice(idx, 1);
+
+            if (item.isBTS) {
+                wordDatabase.splice(BTS_WORD_COUNT, 0, word);
+            } else {
+                wordDatabase.push(word);
+            }
+
+            saveTrashBin();
+            updateWordList();
+            refreshAdminView();
+        }
+
+        function restoreAll() {
+            if (trashBin.length === 0) {
+                alert('Trash bin is empty!');
+                return;
+            }
+            if (!confirm(`Restore all ${trashBin.length} word(s)?`)) {
+                return;
+            }
+
+            trashBin.forEach(item => {
+                if (item.isBTS) {
+                    wordDatabase.splice(BTS_WORD_COUNT, 0, item.word);
+                } else {
+                    wordDatabase.push(item.word);
+                }
+            });
+
+            trashBin = [];
+            saveTrashBin();
+            updateWordList();
+            refreshAdminView();
+        }
+
+        function permanentDelete(word) {
+            if (!confirm(`Permanently delete "${word.toUpperCase()}"? This cannot be undone!`)) {
+                return;
+            }
+            trashBin = trashBin.filter(item => item.word !== word);
+            saveTrashBin();
+            refreshAdminView();
+        }
+
+        function emptyTrash() {
+            if (trashBin.length === 0) {
+                alert('Trash bin is already empty!');
+                return;
+            }
+            if (!confirm(`Permanently delete all ${trashBin.length} word(s)? This cannot be undone!`)) {
+                return;
+            }
+            trashBin = [];
+            saveTrashBin();
+            refreshAdminView();
+        }
+
+        function exportDictionary() {
+            const text = wordDatabase.join('\n');
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `bts-wordle-dictionary-${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function saveTrashBin() {
+            // Save to Supabase instead of localStorage
+            saveToSupabase();
+        }
+
+        function updateWordList() {
+            const newUniqueList = [...new Set(wordDatabase)];
+            Object.assign(uniqueWordList, newUniqueList);
+            uniqueWordList.length = newUniqueList.length;
+            possibleWords = [...uniqueWordList];
+            updateRecommendations();
+            // Save changes to Supabase
+            saveToSupabase();
+        }
+
+        // Initialize the game
+        async function init() {
+            // Load word database from Supabase first
+            await loadFromSupabase();
+
+            createGrid();
+            createKeyboard();
+            updateRecommendations();
+
+            // Event listeners
+            document.getElementById('resetBtn').addEventListener('click', resetGame);
+            document.getElementById('clearRowBtn').addEventListener('click', clearCurrentRow);
+
+            // Admin modal events
+            document.getElementById('closeAdminModal').addEventListener('click', closeAdminModal);
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+            });
+
+            // Dictionary tab
+            document.getElementById('searchWords').addEventListener('input', (e) => {
+                currentSearchTerm = e.target.value;
+                renderWordGrid();
+            });
+            document.getElementById('sortWords').addEventListener('change', (e) => {
+                currentSortOrder = e.target.value;
+                renderWordGrid();
+            });
+            document.getElementById('filterWords').addEventListener('change', (e) => {
+                currentFilter = e.target.value;
+                renderWordGrid();
+            });
+            document.getElementById('selectAllBtn').addEventListener('click', selectAll);
+            document.getElementById('deselectAllBtn').addEventListener('click', deselectAll);
+            document.getElementById('bulkDeleteBtn').addEventListener('click', bulkDelete);
+            document.getElementById('exportDictBtn').addEventListener('click', exportDictionary);
+
+            // Add tab
+            document.getElementById('addSingleWordBtn').addEventListener('click', addSingleWord);
+            document.getElementById('bulkAddBtn').addEventListener('click', bulkAddWords);
+            document.getElementById('singleWordInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addSingleWord();
+            });
+
+            // Trash tab
+            document.getElementById('restoreAllBtn').addEventListener('click', restoreAll);
+            document.getElementById('emptyTrashBtn').addEventListener('click', emptyTrash);
+
+            // Close modal when clicking outside
+            document.getElementById('adminModal').addEventListener('click', (e) => {
+                if (e.target.id === 'adminModal') {
+                    closeAdminModal();
+                }
+            });
+
+            document.addEventListener('keydown', handleKeyPress);
+
+            // Auto-focus the grid so typing works immediately
+            document.body.focus();
+        }
+
+        // Create the 6x5 grid
+        function createGrid() {
+            const grid = document.getElementById('grid');
+            tileStates = [];
+
+            for (let i = 0; i < 6; i++) {
+                const row = document.createElement('div');
+                row.className = 'row';
+                const rowStates = [];
+
+                for (let j = 0; j < 5; j++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile';
+                    tile.dataset.row = i;
+                    tile.dataset.col = j;
+                    tile.addEventListener('click', () => cycleTileState(i, j));
+                    row.appendChild(tile);
+
+                    rowStates.push({ letter: '', state: 'unknown' });
+                }
+
+                grid.appendChild(row);
+                tileStates.push(rowStates);
+            }
+        }
+
+        // Create the keyboard
+        function createKeyboard() {
+            const keyboard = document.getElementById('keyboard');
+            const rows = [
+                ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+                ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+                ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK']
+            ];
+
+            rows.forEach(row => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'keyboard-row';
+
+                row.forEach(key => {
+                    const keyBtn = document.createElement('button');
+                    keyBtn.className = 'key';
+                    keyBtn.textContent = key;
+                    keyBtn.dataset.key = key;
+
+                    if (key === 'ENTER' || key === 'BACK') {
+                        keyBtn.classList.add('wide');
+                    }
+
+                    keyBtn.addEventListener('click', () => handleKeyClick(key));
+                    rowDiv.appendChild(keyBtn);
+                });
+
+                keyboard.appendChild(rowDiv);
+            });
+        }
+
+        // Handle keyboard clicks
+        function handleKeyClick(key) {
+            if (key === 'ENTER') {
+                moveToNextRow();
+            } else if (key === 'BACK') {
+                deleteLetter();
+            } else if (key.length === 1) {
+                // Regular letter - if clicking a letter that's already been marked, cycle its global state
+                const letter = key.toLowerCase();
+                if (letterStates[letter]) {
+                    cycleLetterState(letter);
+                } else {
+                    addLetter(letter);
+                }
+            }
+        }
+
+        // Handle physical keyboard input
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') {
+                moveToNextRow();
+            } else if (e.key === 'Backspace') {
+                deleteLetter();
+            } else if (/^[a-zA-Z]$/.test(e.key)) {
+                addLetter(e.key.toLowerCase());
+            }
+        }
+
+        // Add a letter to the current position
+        function addLetter(letter) {
+            if (currentRow >= 6 || currentCol >= 5) return;
+
+            const tile = getTile(currentRow, currentCol);
+            tile.textContent = letter.toUpperCase();
+            tile.classList.add('filled');
+
+            tileStates[currentRow][currentCol].letter = letter;
+
+            currentCol++;
+        }
+
+        // Delete the last letter
+        function deleteLetter() {
+            if (currentCol > 0) {
+                currentCol--;
+                const tile = getTile(currentRow, currentCol);
+                tile.textContent = '';
+                tile.classList.remove('filled', 'correct', 'present', 'absent');
+
+                tileStates[currentRow][currentCol].letter = '';
+                tileStates[currentRow][currentCol].state = 'unknown';
+            }
+        }
+
+        // Move to the next row
+        function moveToNextRow() {
+            if (currentCol === 5 && currentRow < 5) {
+                currentRow++;
+                currentCol = 0;
+                updateStats();
+            }
+        }
+
+        // Cycle through tile states: unknown → absent → present → correct
+        function cycleTileState(row, col) {
+            if (!tileStates[row][col].letter) return;
+
+            const tile = getTile(row, col);
+            const currentState = tileStates[row][col].state;
+            const letter = tileStates[row][col].letter;
+
+            const states = ['unknown', 'absent', 'present', 'correct'];
+            const currentIndex = states.indexOf(currentState);
+            const nextIndex = (currentIndex + 1) % states.length;
+            const nextState = states[nextIndex];
+
+            tileStates[row][col].state = nextState;
+
+            tile.classList.remove('correct', 'present', 'absent');
+            if (nextState !== 'unknown') {
+                tile.classList.add(nextState);
+            }
+
+            // Update global letter state (prioritize correct > present > absent)
+            updateLetterState(letter, nextState);
+            updateKeyboard();
+            updateRecommendations();
+        }
+
+        // Cycle keyboard letter state
+        function cycleLetterState(letter) {
+            const states = ['unknown', 'absent', 'present', 'correct'];
+            const currentState = letterStates[letter] || 'unknown';
+            const currentIndex = states.indexOf(currentState);
+            const nextIndex = (currentIndex + 1) % states.length;
+            const nextState = states[nextIndex];
+
+            if (nextState === 'unknown') {
+                delete letterStates[letter];
+            } else {
+                letterStates[letter] = nextState;
+            }
+
+            updateKeyboard();
+            updateRecommendations();
+        }
+
+        // Update global letter state based on tile information
+        function updateLetterState(letter, state) {
+            const priority = { 'correct': 3, 'present': 2, 'absent': 1, 'unknown': 0 };
+            const currentPriority = priority[letterStates[letter]] || 0;
+            const newPriority = priority[state];
+
+            if (newPriority > currentPriority) {
+                if (state === 'unknown') {
+                    delete letterStates[letter];
+                } else {
+                    letterStates[letter] = state;
+                }
+            }
+        }
+
+        // Update keyboard visual states
+        function updateKeyboard() {
+            document.querySelectorAll('.key').forEach(key => {
+                const letter = key.dataset.key.toLowerCase();
+                if (letterStates[letter]) {
+                    key.classList.remove('correct', 'present', 'absent');
+                    key.classList.add(letterStates[letter]);
+                } else {
+                    key.classList.remove('correct', 'present', 'absent');
+                }
+            });
+        }
+
+        // Get tile element
+        function getTile(row, col) {
+            return document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        }
+
+        // Filter possible words based on current constraints
+        function filterPossibleWords() {
+            return WORD_LIST.filter(word => {
+                // Check each marked tile
+                for (let row = 0; row < tileStates.length; row++) {
+                    for (let col = 0; col < tileStates[row].length; col++) {
+                        const tile = tileStates[row][col];
+                        if (!tile.letter) continue;
+
+                        const letter = tile.letter;
+                        const state = tile.state;
+
+                        if (state === 'correct') {
+                            // Letter must be in this exact position
+                            if (word[col] !== letter) return false;
+                        } else if (state === 'present') {
+                            // Letter must be in word but not in this position
+                            if (!word.includes(letter) || word[col] === letter) return false;
+                        } else if (state === 'absent') {
+                            // Letter must not be in the word at all
+                            // UNLESS it's marked correct/present elsewhere
+                            const hasCorrectOrPresent = tileStates.some(r =>
+                                r.some(t => t.letter === letter && (t.state === 'correct' || t.state === 'present'))
+                            );
+                            if (!hasCorrectOrPresent && word.includes(letter)) return false;
+                        }
+                    }
+                }
+
+                // Check global letter states from keyboard
+                for (const [letter, state] of Object.entries(letterStates)) {
+                    if (state === 'absent') {
+                        // Check if this letter is marked present/correct anywhere
+                        const hasCorrectOrPresent = tileStates.some(r =>
+                            r.some(t => t.letter === letter && (t.state === 'correct' || t.state === 'present'))
+                        );
+                        if (!hasCorrectOrPresent && word.includes(letter)) return false;
+                    }
+                }
+
+                return true;
+            });
+        }
+
+        // Score a word based on letter elimination potential
+        function scoreWord(word, possibleWords, isInitialState = false) {
+            const letterSet = new Set(word);
+            let score = 0;
+
+            // Heavily penalize words with repeating letters in initial state
+            if (isInitialState && letterSet.size < 5) {
+                score -= 1000;
+            }
+
+            // Score based on unique letters (bonus for all unique)
+            score += letterSet.size * 15;
+            if (letterSet.size === 5) {
+                score += 50; // Bonus for no repeating letters
+            }
+
+            // Score based on letter frequency in English
+            for (const letter of letterSet) {
+                score += LETTER_FREQ[letter] || 0;
+            }
+
+            // Score based on how many words this would eliminate
+            const lettersToCheck = [...letterSet];
+            let wouldEliminate = 0;
+
+            for (const possibleWord of possibleWords) {
+                const hasAnyLetter = lettersToCheck.some(l => possibleWord.includes(l));
+                if (!hasAnyLetter) {
+                    wouldEliminate++;
+                }
+            }
+
+            score += wouldEliminate * 2;
+
+            // Position frequency bonus
+            const positionFreq = {};
+            for (const pw of possibleWords) {
+                for (let i = 0; i < 5; i++) {
+                    const key = `${i}-${pw[i]}`;
+                    positionFreq[key] = (positionFreq[key] || 0) + 1;
+                }
+            }
+
+            for (let i = 0; i < 5; i++) {
+                const key = `${i}-${word[i]}`;
+                score += (positionFreq[key] || 0) / possibleWords.length * 5;
+            }
+
+            return score;
+        }
+
+        // Get optimal starting words with no overlapping letters
+        function getOptimalStartingWords(scoredWords) {
+            const selected = [];
+            const selectedWords = new Set(); // Track word strings to prevent duplicates
+            const usedLetters = new Set();
+
+            // First, filter to only words with 5 unique letters
+            const uniqueWords = scoredWords.filter(w => new Set(w.word).size === 5);
+
+            for (const item of uniqueWords) {
+                if (selected.length >= 10) break;
+                if (selectedWords.has(item.word)) continue; // Skip duplicates
+
+                const wordLetters = new Set(item.word);
+                const hasOverlap = [...wordLetters].some(letter => usedLetters.has(letter));
+
+                if (!hasOverlap) {
+                    selected.push(item);
+                    selectedWords.add(item.word);
+                    wordLetters.forEach(letter => usedLetters.add(letter));
+                }
+            }
+
+            // If we don't have enough, fill with remaining high-scoring words
+            if (selected.length < 10) {
+                for (const item of uniqueWords) {
+                    if (selected.length >= 10) break;
+                    if (!selectedWords.has(item.word)) {
+                        selected.push(item);
+                        selectedWords.add(item.word);
+                    }
+                }
+            }
+
+            return selected;
+        }
+
+        // Update word recommendations
+        function updateRecommendations() {
+            possibleWords = filterPossibleWords();
+
+            // Check if this is the initial state (no letters marked)
+            const isInitialState = Object.keys(letterStates).length === 0 &&
+                                   tileStates.every(row => row.every(tile => !tile.letter));
+
+            // Score all possible words
+            const scoredWords = possibleWords.map(word => ({
+                word,
+                score: scoreWord(word, possibleWords, isInitialState)
+            }));
+
+            // Sort by score (descending)
+            scoredWords.sort((a, b) => b.score - a.score);
+
+            // For initial state, ensure top recommendations have no overlapping letters
+            let topWords;
+            if (isInitialState) {
+                topWords = getOptimalStartingWords(scoredWords);
+            } else {
+                topWords = scoredWords.slice(0, 10);
+            }
+
+            // Update UI
+            const wordList = document.getElementById('wordList');
+            wordList.innerHTML = '';
+
+            if (topWords.length === 0) {
+                wordList.innerHTML = '<div class="loading">No matching words found!</div>';
+            } else {
+                topWords.forEach((item, index) => {
+                    const wordItem = document.createElement('div');
+                    wordItem.className = 'word-item';
+
+                    const uniqueLetters = new Set(item.word).size;
+                    const commonLetters = [...new Set(item.word)].filter(l => LETTER_FREQ[l] > 5).length;
+
+                    wordItem.innerHTML = `
+                        <div class="word-text">${item.word}</div>
+                        <div class="word-reason">
+                            Rank #${index + 1} • ${uniqueLetters} unique letters •
+                            ${commonLetters} common letters • Score: ${Math.round(item.score)}
+                        </div>
+                    `;
+
+                    wordItem.addEventListener('click', () => fillCurrentRowWithWord(item.word));
+                    wordList.appendChild(wordItem);
+                });
+            }
+
+            updateStats();
+        }
+
+        // Fill current row with a recommended word
+        function fillCurrentRowWithWord(word) {
+            // Clear current row first
+            for (let i = 0; i < 5; i++) {
+                const tile = getTile(currentRow, i);
+                tile.textContent = '';
+                tile.classList.remove('filled', 'correct', 'present', 'absent');
+                tileStates[currentRow][i] = { letter: '', state: 'unknown' };
+            }
+
+            // Fill with new word
+            currentCol = 0;
+            for (const letter of word) {
+                addLetter(letter);
+            }
+        }
+
+        // Clear the current row
+        function clearCurrentRow() {
+            for (let i = 0; i < 5; i++) {
+                const tile = getTile(currentRow, i);
+                tile.textContent = '';
+                tile.classList.remove('filled', 'correct', 'present', 'absent');
+                tileStates[currentRow][i] = { letter: '', state: 'unknown' };
+            }
+            currentCol = 0;
+            updateRecommendations();
+        }
+
+        // Update statistics display
+        function updateStats() {
+            document.getElementById('possibleCount').textContent = possibleWords.length;
+
+            let knownPositions = 0;
+            for (let row = 0; row < tileStates.length; row++) {
+                for (let col = 0; col < tileStates[row].length; col++) {
+                    if (tileStates[row][col].state === 'correct') {
+                        knownPositions++;
+                    }
+                }
+            }
+            document.getElementById('knownLetters').textContent = `${knownPositions}/5`;
+            document.getElementById('currentRow').textContent = `${currentRow + 1}/6`;
+        }
+
+        // Reset the entire game
+        function resetGame() {
+            currentRow = 0;
+            currentCol = 0;
+            letterStates = {};
+
+            // Reset all tiles
+            for (let i = 0; i < 6; i++) {
+                for (let j = 0; j < 5; j++) {
+                    const tile = getTile(i, j);
+                    tile.textContent = '';
+                    tile.classList.remove('filled', 'correct', 'present', 'absent');
+                    tileStates[i][j] = { letter: '', state: 'unknown' };
+                }
+            }
+
+            // Reset keyboard
+            document.querySelectorAll('.key').forEach(key => {
+                key.classList.remove('correct', 'present', 'absent');
+            });
+
+            possibleWords = [...uniqueWordList];
+            updateRecommendations();
+        }
+
+        // Start the game when page loads
+        init();
+    </script>
+</body>
+</html>
